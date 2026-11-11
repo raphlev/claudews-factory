@@ -89,8 +89,8 @@ is sonnet for low risk and opus for medium and high; the code reviewer is haiku 
 low risk and sonnet otherwise; the final reviewer is sonnet for low risk and opus
 otherwise. The third line of each reviewer box says when it runs: the code reviewer
 always, the others only when intake flags that surface. The final review always
-runs, alone, once every routed review has passed. A round is one build → gate →
-review pass.
+runs, alone, once every routed review has passed. A round is one pass through
+build → gate → reviews → final review.
 
 ## Planning (new projects and big features)
 
@@ -119,13 +119,13 @@ idea or spec file → planner (opus) → plan.md → I approve or ask for change
 - Bootstrap runs only when the repo has no project code. A builder, given the
   plan folder instead of a job and run on the `bootstrap` model, scaffolds the
   skeleton in the main checkout on the base branch, with a test runner and one
-  passing test. It writes AGENTS.md
-  (setup, dev server on a given port, validation commands) and fills `checks` in
-  config.json. Before it commits, the checks must pass and the final reviewer
-  must pass the skeleton against the plan. No specialist reviews a skeleton, so I
-  also look at it myself. This is the one time the factory
-  works in the main checkout and commits on the base branch, and it pushes only
-  after I say yes.
+  passing test. It writes AGENTS.md (setup, dev server on a given port, validation
+  commands) and fills `checks` in config.json. Before it commits, the checks must
+  pass and the final reviewer must pass the skeleton against the plan; CHANGES go
+  back to the same builder, at most `max_rounds` times, then to me. No specialist
+  reviews a skeleton, so I also look at it myself. This is the one time the
+  factory works in the main checkout and commits on the base branch, and it pushes
+  only after I say yes.
 - Issues are filed only once the bootstrap is on origin, because every job
   branches from there. job.py files them in order with the `factory` label. Each
   body ends with a `Depends on: #a, #b` line where needed, and `queue` holds an
@@ -315,8 +315,9 @@ the job's worktree.
     Pre-existing issues the change did not make worse go under Notes.
 - final reviewer (reviewer-final). Runs alone, after every routed review has
   passed, on the exact commit that would merge, and writes round-N/review-final.md
-  in the same format. It rereads the whole change from scratch instead of trusting
-  the earlier reviews, and looks for what specialists miss:
+  in the same format. It reads spec.md, the diff, the changed files in full and
+  every round's reviews, then rereads the whole change from scratch instead of
+  trusting those reviews, and looks for what specialists miss:
   - pieces that contradict each other: spec, code, tests, docs and what build.md
     claims;
   - a fix from one round that broke something an earlier round had settled;
@@ -330,12 +331,12 @@ the job's worktree.
 - approver. Reads everything in the job folder and the diff. APPROVE only when
   every acceptance criterion is met with convincing evidence (it spot-checks at
   least one itself), the final round's gate, reviews and final review pass with no
-  Note describing a real problem, and the change stays inside intake's Scope. ESCALATE
-  when any of that fails, or when the change touches money, access or identity;
-  deploy, CI or hosting config; a schema migration, email, production data or a
-  new dependency; or rests on an Assumption that is really a product decision.
-  decision.md has Why, Acceptance criteria, and For the human: the exact decision
-  needed and the files to look at. It does not escalate just to be safe.
+  Note describing a real problem, and the change stays inside intake's Scope.
+  ESCALATE when any of that fails, or when the change touches money, access or
+  identity; deploy, CI or hosting config; a schema migration, email, production
+  data or a new dependency; or rests on an Assumption that is really a product
+  decision. decision.md has Why, Acceptance criteria, and For the human: the exact
+  decision needed and the files to look at. It does not escalate just to be safe.
 
 Agents that need to see a page (builder, ux, ui) start the dev server from
 AGENTS.md on their own port and look with a browser CLI such as `agent-browser`,
@@ -387,10 +388,10 @@ atomically.
 - gate.py: runs the `checks` commands from the main checkout's config.json, in
   order, inside the job's worktree, and stops at the first failure. Each command
   runs through the system shell, so it must be written to work on this OS, and the
-  full output goes to checks.log. It also fails a
-  branch that modifies or deletes a file matching `protected_paths`. `--merge`
-  writes merge-checks.md instead. `--dry-run` writes nothing: the builder uses it
-  on its worktree, and bootstrap uses it without a job, on the main checkout.
+  full output goes to checks.log. It also fails a branch that modifies or deletes
+  a file matching `protected_paths`. `--merge` writes merge-checks.md instead.
+  `--dry-run` writes nothing: the builder uses it on its worktree, and bootstrap
+  uses it without a job, on the main checkout.
 - route.py: looks up intake's risk and surfaces in `routing` and
   `surface_reviewers` and records the builder's model, the final reviewer's model
   and the reviewer set in job.json.
@@ -482,8 +483,8 @@ One self-contained HTML file, served from factory/ with
 `python -m http.server --bind 127.0.0.1`, so only this machine can open it.
 Jobs are cards moving across the loop's stages. Each card shows its issue and PR,
 its risk, cost and time, and one row per round of gate, reviewer and final-review
-chips that fill in as verdicts land. needs-human jobs stand out. Click a card to read its markdown
-files, with each file's Summary shown first. Clean and minimal.
+chips that fill in as verdicts land. needs-human jobs stand out. Click a card to
+read its markdown files, with each file's Summary shown first. Clean and minimal.
 
 The plan strip appears only when at least one plan exists. Without plans the page
 is the job board alone, with no empty strip, heading or placeholder for plans.

@@ -41,6 +41,15 @@ Follow these in order. Each step is a section below.
 4. **Start a new project, or a big feature:** when you want the factory to plan
    and build something larger from a spec.
 
+**No project in mind yet?** Do not generate the factory just to have it. It is
+generated inside a project and tailored to it, so without a project there is
+nothing for it to build or check. Instead, create a small throwaway project
+purely to test the factory: the prompt has never been run, and it is better to
+find its problems on a toy than on a project you care about. Example 1 under
+"Example plans, from simple to complex" is a good first one. It exercises the
+whole path: plan, skeleton, a few issues, pull requests and the dashboard. For an
+empty project like this, do steps 1 and 2, then go straight to step 4.
+
 Two sections are for reference along the way: **How it works on GitHub**, if
 GitHub is new to you, and **The dashboard**, for watching the factory work.
 
@@ -367,6 +376,113 @@ in a new session, say which plan you mean:
 To start from nothing: create an empty folder, make it a GitHub repo as described
 above, generate the factory in it, add your spec file if you have one, then run
 `/factory plan <spec file or idea>`.
+
+## Example plans, from simple to complex
+
+Ten ideas you can give to `/factory plan`, ordered from a first test to a real
+product. Each one adds something new for the factory to handle. Start at the top:
+examples 1 to 3 are meant for testing the factory itself.
+
+1. **Command-line to-do list.** The smallest complete project: no web page, no
+   database, easy to check by running it.
+
+   ```text
+   /factory plan A command-line to-do list in Python: add, list, complete and delete tasks, saved in a JSON file
+   ```
+
+2. **Small library with tests.** Pure functions only, so the checks do most of the
+   judging. Good for seeing the test gate at work.
+
+   ```text
+   /factory plan A Python library that converts between units of length, weight and temperature, with a test for every conversion
+   ```
+
+3. **Tool that reads files and calls the network.** Adds error handling and
+   things that can fail outside the program.
+
+   ```text
+   /factory plan A command-line tool that scans a folder of Markdown files and reports every broken link, with the file and line number
+   ```
+
+4. **Static website.** The first one with something to look at, so the UX and UI
+   reviewers run.
+
+   ```text
+   /factory plan A personal site in plain HTML and CSS: a home page, an about page and a projects page, readable on a phone
+   ```
+
+5. **Single-page app that keeps data in the browser.** Adds interaction and
+   state, still with no server.
+
+   ```text
+   /factory plan An expense tracker as a single web page: add expenses with a category, see monthly totals and a chart, data kept in the browser
+   ```
+
+6. **Web API with a database.** The first one with stored data, which raises the
+   risk level of some issues.
+
+   ```text
+   /factory plan A REST API for notes in Python with SQLite: create, read, update, delete and search notes, with tests for every endpoint
+   ```
+
+7. **API and web page together.** Two parts that must agree with each other,
+   which is where ordering between issues starts to matter.
+
+   ```text
+   /factory plan A URL shortener: an API that creates and resolves short links with a click count, and a small web page to use it
+   ```
+
+8. **Content site with several features.** More issues, and features that build
+   on each other.
+
+   ```text
+   /factory plan A blog generator: Markdown posts become a static site with tags, an archive by month, search and an RSS feed
+   ```
+
+9. **Multi-user app with login.** Accounts bring in the security reviewer, and
+   the approver hands you every change that touches login or permissions.
+
+   ```text
+   /factory plan docs/spec.md
+   ```
+
+   with a spec for a shared task board: sign up and log in, boards with columns,
+   cards you can move, and each user seeing only their own boards.
+
+10. **A small real product.** Many issues over several runs, with accounts, data,
+    email and an admin area. Expect to make real decisions along the way.
+
+    ```text
+    /factory plan docs/spec.md
+    ```
+
+    with a spec for a booking app: customers pick a time slot, receive a
+    confirmation email and can cancel; the owner sets opening hours and sees the
+    bookings in an admin page.
+
+Advice for using them:
+
+- **From example 7 on, write a spec file instead of a sentence.** A sentence
+  leaves too many choices open, and the planner will come back with questions.
+- **Name the stack if you care about it.** If you do not, the planner proposes
+  one and you approve or change it with the plan.
+- **Examples 4, 5 and 7 to 10 have web pages.** Install a browser CLI such as
+  `agent-browser` first, or the UX and UI reviewers work from the code alone.
+- **Examples 9 and 10 will not merge by themselves end to end.** The approver
+  always hands you changes that touch login, permissions, email or a new
+  dependency. That is intended: those are the decisions a human should see.
+- **Keep `concurrency` at 1 for a new project.** Its issues build on each other.
+
+### What a good spec file contains
+
+A spec is a plain Markdown file in the project, for example `docs/spec.md`. One
+page is enough for most of the examples above.
+
+- **What it is and who it is for**, in two or three sentences.
+- **What it must do**, as a list of behaviours a user would recognise.
+- **The stack**, if you have a preference: language, framework, database.
+- **What is out of scope** for now. This prevents the plan from growing.
+- **Anything already decided**: names, data you must keep, how it is run.
 
 ## The dashboard
 
