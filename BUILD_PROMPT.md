@@ -18,7 +18,8 @@ factory anyway in its generic form and list what is left to adapt in your hand-o
 The factory is one skill, /factory. Whichever Claude Code session runs it becomes
 the only orchestrator: it works through the queue, runs up to `concurrency` jobs at
 once, spawns every agent as a background subagent, and calls the scripts. It never
-writes plans, code, specs, reviews or decisions, and it never edits job.json itself.
+writes plans, code, specs, reviews or decisions, and it never edits job.json or
+plan.json itself.
 
 ## The loop (edit this to change the factory)
 
@@ -105,11 +106,13 @@ idea or spec file → planner (opus) → plan.md → I approve or ask for change
   plan.md with a Coverage list: every requirement in the spec, and the issue that
   delivers it or the reason it was left out.
 - The orchestrator shows me the plan's Summary, its issue list and any questions.
-  Nothing is filed until I approve. My answers and changes are saved verbatim as
-  note-<k>.md, and the planner rewrites the plan from them.
+  Nothing is filed until I approve, and job.py records that approval. My answers
+  and changes are saved verbatim as note-<k>.md, and the planner rewrites the plan
+  from them. A plan resumes from its status, as a job does from its stage.
 - Bootstrap runs only when the repo has no project code. A builder, given the
-  plan folder instead of a job, scaffolds the skeleton in the main checkout on the
-  base branch, with a test runner and one passing test. It writes AGENTS.md
+  plan folder instead of a job and run on the `bootstrap` model, scaffolds the
+  skeleton in the main checkout on the base branch, with a test runner and one
+  passing test. It writes AGENTS.md
   (setup, dev server on a given port, validation commands) and fills `checks` in
   config.json. The checks must pass before it commits. There is nothing to gate or
   review against yet, so I review it myself. This is the one time the factory
@@ -131,15 +134,15 @@ idea or spec file → planner (opus) → plan.md → I approve or ask for change
     reviewer-code.md  reviewer-ux.md  reviewer-ui.md  reviewer-security.md
 factory/
   config.json                      # every knob: concurrency, rounds, labels, checks, routing, prices
-  bin/job.py                       # the only writer of job.json; refuses illegal moves; merges
+  bin/job.py                       # the only writer of job.json and plan.json; refuses illegal moves; merges
   bin/gate.py                      # runs the checks in a job's worktree, writes round-N/checks.md
   bin/route.py                     # risk + surfaces → the job's reviewers and models
-  dashboard.html                   # visual board, polls the job folders
+  dashboard.html                   # visual board, polls the job and plan folders
   plans/001-todo-app/              # one folder per plan (gitignored runtime state)
     brief.md                       # my idea or my spec file, verbatim
     plan.md                        # the planner's stack, structure and ordered issues
     note-1.md                      # my answers or requested changes
-    issues.json                    # the issues filed from this plan
+    plan.json                      # the plan's state and filed issues, drives the dashboard
   jobs/003-rate-limiting/          # one folder per job (gitignored runtime state)
     job.json                       # the job's state, drives the dashboard
     issue.md                       # the issue, quoted as data
@@ -177,8 +180,8 @@ factory/config.json
   "labels": { "queue": "factory", "needs_info": "factory:needs-info",
               "needs_human": "factory:needs-human" },
   "checks": ["npm ci", "npm run lint", "npm test", "npm run build"],
-  "models": { "planner": "opus", "intake": "opus", "spec-writer": "opus",
-              "approver": "opus" },
+  "models": { "planner": "opus", "bootstrap": "opus", "intake": "opus",
+              "spec-writer": "opus", "approver": "opus" },
   "routing": { "low":    { "builder": "sonnet", "code": "haiku" },
                "medium": { "builder": "opus",   "code": "sonnet" },
                "high":   { "builder": "opus",   "code": "sonnet" } },
@@ -207,6 +210,16 @@ factory/jobs/<job-id>/job.json
   "cost_usd": 1.42, "started": "2026-01-01T10:00:00Z", "ended": null }
 ```
 
+factory/plans/<plan-id>/plan.json
+
+```
+{ "id": "001-todo-app", "title": "Todo app", "status": "filed",
+  "issues": [ { "issue": 3, "title": "Add a task", "depends_on": [] },
+              { "issue": 4, "title": "Mark a task done", "depends_on": [3] } ],
+  "started": "2026-01-01T09:00:00Z" }
+```
+
+A plan's `status` is one of planning, needs-info, ready, approved, filed. A job's
 `stage` is one of intake, needs-info, spec, build, gate, review, approve, merging,
 needs-human, merged, rejected. The legal moves between them are one table at the top
 of job.py.
@@ -235,7 +248,9 @@ the job's worktree.
   earlier plan.md, and the repo as it stands. It plans the smallest version that
   delivers the idea, orders the issues so each builds on merged work, puts the
   riskiest decisions early, and writes each issue so intake can accept it as is:
-  the behaviour wanted and how to tell it works.
+  the behaviour wanted and how to tell it works. Each issue is a `### <n>. <title>`
+  heading, a `Depends on: <plan numbers, or none>` line, then the issue body, so
+  job.py can file it without guessing.
 - intake (Read, Grep, Glob, Write; no shell). Reads issue.md, any earlier
   intake-<k>.md, and the code the issue would touch.
   - ACCEPT: the request is clear, fits the project, and can land as one small PR.
@@ -330,17 +345,23 @@ atomically.
     factory labels and closes the job's PR.
   - A job that reaches merged or rejected has its worktree and local branch
     removed.
-  - `plan-new` (the idea on stdin, or `--file <path>` for a spec) creates the
-    plan folder with brief.md and prints the plan id. `plan-note <plan>` (text on
-    stdin) saves note-<k>.md.
-  - `plan-file <plan>` refuses unless plan.md starts with `PLAN: READY`. It
-    creates the issues in order, turns the plan's own numbering into real issue
-    numbers in each `Depends on:` line, and records them in issues.json. It
-    refuses to file the same plan twice.
+  - job.py is also the only writer of plan.json. `plan-new` (the idea on stdin,
+    or `--file <path>` for a spec) creates the plan folder with brief.md and
+    prints the plan id, numbered and named like a job id. `plan-sync <plan>` sets
+    needs-info or ready from plan.md's first line. `plan-note <plan>` (text on
+    stdin) saves note-<k>.md and returns the plan to planning.
+    `plan-approve <plan>` records my approval of a ready plan.
+  - `plan-file <plan>` refuses unless the plan is approved, and while the base
+    branch has commits that are not on origin. It creates the issues in order,
+    turns the plan's own numbering into real issue numbers in each `Depends on:`
+    line, records them in plan.json and sets filed. It refuses to file the same
+    plan twice.
   - `queue` shows an issue as `hold`, naming what it waits for, until every
-    issue in its `Depends on:` line is closed.
+    issue in its `Depends on:` line is closed. `create` refuses it until then.
 - gate.py: runs the `checks` commands from the main checkout's config.json, in
-  order, inside the job's worktree, and stops at the first failure. It also fails a
+  order, inside the job's worktree, and stops at the first failure. Each command
+  runs through the system shell, so it must be written to work on this OS, and the
+  full output goes to checks.log. It also fails a
   branch that modifies or deletes a file matching `protected_paths`. `--merge`
   writes merge-checks.md instead. `--dry-run` writes nothing: the builder uses it
   on its worktree, and bootstrap uses it without a job, on the main checkout.
@@ -352,11 +373,13 @@ atomically.
 
 - Agents get context from files, not the conversation. Each writes only its own
   file and replies with one line. The orchestrator reads only the first line of an
-  agent's file, so its context lasts the whole run.
+  agent's file, so its context lasts the whole run. It reads more only to show me
+  a plan or to answer a question I ask about a job.
 - Every agent prompt starts with the same header line: job id, job folder, main
   checkout, worktree, branch, base and issue number, all as absolute paths. Agents
   that open pages also get their own port: `base + step × job number` for the
-  builder, +1 for ux, +2 for ui.
+  builder, +1 for ux, +2 for ui. Planner and bootstrap prompts start with the
+  plan's id and folder instead.
 - The skill and the agents carry nothing repo-specific. They read AGENTS.md (or
   CLAUDE.md) for setup, dev server and conventions; the checks live in config.json.
 - Use the cheapest model that does each job well. Every model is set in
@@ -385,6 +408,10 @@ atomically.
 - APPROVE: sync the branch with the base, run the gate again, then `gh pr merge`.
   ESCALATE: mark the PR ready, post the decision on it, label the issue. The
   approver escalates only with a specific question for the human.
+- While agents run, the orchestrator does not poll or wait: it is notified when one
+  finishes and advances that job then. It reports one short line per transition.
+  When nothing is queued or running, it prints `job.py summary` (job, issue, stage,
+  PR, cost, time) and lists what waits for me.
 - State is files, so runs resume: a fresh /factory run picks every job back up
   from its stage, and a new session spawns a new builder that reads build.md and
   `git log` to see how far the last one got.
@@ -411,7 +438,8 @@ atomically.
                       turn a new project or a big feature into an ordered queue of issues
 /factory <anything>   talk to the factory: ask about a job or what needs me, give feedback
                       on an escalated one, answer an intake question (posted on the issue
-                      for me), reject a waiting job, or file a new feature
+                      for me), reject a waiting job, approve or change a plan, or file a
+                      new feature
 ```
 
 You approve by merging the PR on GitHub. Feedback goes to the builder verbatim as
@@ -420,12 +448,25 @@ labeled issue first, then runs like any other.
 
 ## Dashboard
 
-One self-contained HTML file, served with `python -m http.server` from factory/.
+One self-contained HTML file, served from factory/ with
+`python -m http.server --bind 127.0.0.1`, so only this machine can open it.
 Jobs are cards moving across the loop's stages. Each card shows its issue and PR,
 its risk, cost and time, and one row per round of gate and reviewer chips that fill
 in as verdicts land. needs-human jobs stand out. Click a card to read its markdown
-files, with each file's Summary shown first. Clean and minimal. Plans are not on
-the board: their issues show up as jobs once they run.
+files, with each file's Summary shown first. Clean and minimal.
+
+The plan strip appears only when at least one plan exists. Without plans the page
+is the job board alone, with no empty strip, heading or placeholder for plans.
+Plans sit in that strip above the board, one card each: its title, its status, and
+once filed, how many of its issues are merged. A plan waiting for me (needs-info or
+ready) stands out like a needs-human job. Click it to read brief.md, plan.md and my
+notes, and to see every issue with where it stands: its job's stage, or not started.
+A job that came from a plan shows the plan's name on its card.
+
+The page is read-only: it shows state and never changes it. It polls every two
+seconds and finds jobs and plans from the directory listings http.server serves, so
+there is no index file to keep in sync. With no jobs and no plans it says so
+instead of showing an empty page.
 
 Cost is best-effort: the API-equivalent price of the job's subagents, summed from
 Claude Code's transcripts (matched by the job folder in the prompt header) and
@@ -445,9 +486,10 @@ the transcripts cannot be read, show no cost and keep everything else working.
   does, where state lives, how to open the dashboard, and that `.worktrees/` holds
   full checkouts, so any tool that ignores .gitignore must exclude it.
 - Create the three GitHub labels when `gh` is available.
-- Verify: the checks, when there are any, pass on the base branch; `job.py queue` runs without error;
-  config.json parses; the dashboard renders a made-up job, which you then delete.
+- Verify: the checks, when there are any, pass on the base branch; `job.py queue`
+  runs without error when the repo is on GitHub; config.json parses; the dashboard
+  renders a made-up job and a made-up plan, which you then delete.
 - Commit on the current branch and ask before pushing. Then tell me in a few lines
   how to run my first job or, in an empty repo, how to start with /factory plan.
-  Suggest running /factory in a Sonnet session, and
-  raising `concurrency` from 1 to 2 once I trust the results.
+  Suggest running /factory in a Sonnet session, and raising `concurrency` from 1
+  to 2 once I trust the results.

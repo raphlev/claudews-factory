@@ -24,6 +24,9 @@ Follow these in order. Each step is a section below.
 4. **Start a new project, or a big feature:** when you want the factory to plan
    and build something larger from a spec.
 
+Two sections are for reference along the way: **How it works on GitHub**, if
+GitHub is new to you, and **The dashboard**, for watching the factory work.
+
 The prompt has not been run yet, so the first generation is also its first test.
 If something comes out wrong, fix `BUILD_PROMPT.md` in this folder rather than only
 the generated project, so the next project gets it right.
@@ -197,7 +200,7 @@ Then, in Claude Code, run `/factory run 12` for that issue alone, or
 
 - **In Claude Code:** the factory prints one line each time a job moves a step.
   You can also ask, for example `/factory how is issue 12 going?`, or open the
-  dashboard (see "Run your first job").
+  dashboard (see "The dashboard").
 - **On github.com:** open the issue to read the factory's comments. The pull
   request is linked from the issue; open it to see the code so far.
 
@@ -294,22 +297,15 @@ still marked **Draft**, click **Ready for review** first.
    /factory run
    ```
 
-3. Watch it on the dashboard:
-
-   ```powershell
-   cd factory
-   python -m http.server
-   ```
-
-   Then open <http://localhost:8000/dashboard.html>.
+3. Watch it on the dashboard. See "The dashboard" below for how to open it.
 
 4. The job ends in one of four ways:
    - **Merged:** the approver was sure and merged the PR.
    - **Needs human:** the PR is ready for you and the issue is labeled
      `factory:needs-human`. Merge the PR to approve it, or tell the factory what
      to change with `/factory <your feedback>`.
-   - **Needs info:** intake asked the issue's author a question. Answer on the
-     issue and run `/factory run` again.
+   - **Needs info:** intake asked the issue's author a question. Answer it as
+     described under "Answer a question from the factory".
    - **Rejected:** intake said why on the issue and removed the label.
 
 ## Start a new project, or a big feature
@@ -340,9 +336,105 @@ stack, what is out of scope), the fewer questions and surprises you get.
    order. Run `/factory run` and they are built one after another, each waiting
    until the issues it depends on are closed.
 
+Planning is a conversation in Claude Code; nothing about a plan happens on
+github.com until its issues are filed. After `/factory plan`, the factory shows
+you the plan or its questions, and you reply in the chat. If you come back later
+in a new session, say which plan you mean:
+
+```text
+/factory for the reading-list plan: use SQLite, and one user only
+/factory change the reading-list plan: drop the export feature for now
+/factory approve the reading-list plan
+```
+
 To start from nothing: create an empty folder, make it a GitHub repo as described
 above, generate the factory in it, add your spec file if you have one, then run
 `/factory plan <spec file or idea>`.
+
+## The dashboard
+
+The dashboard is a web page on your own machine that shows what the factory is
+doing. It is for watching, not for controlling: it has no buttons that change
+anything. You control the factory with `/factory` commands in Claude Code.
+
+### Open it
+
+1. Open a second PowerShell window, so it does not block Claude Code.
+2. Go to the project's `factory` folder and start the small web server:
+
+   ```powershell
+   cd <project>\factory
+   python -m http.server --bind 127.0.0.1
+   ```
+
+3. Open <http://localhost:8000/dashboard.html> in your browser.
+4. Leave the PowerShell window open while you use the page. Press `Ctrl+C` in it
+   to stop the server when you are done.
+
+Notes:
+
+- `--bind 127.0.0.1` keeps the page private to your machine. Without it, other
+  devices on your network could open it and read the job files.
+- If port 8000 is already used by something else, pick another one, for example
+  `python -m http.server 8010 --bind 127.0.0.1`, and open
+  <http://localhost:8010/dashboard.html>.
+- The page refreshes itself every two seconds. You never need to reload it.
+- You can open it at any time, before, during or after a run. It reads the files
+  the factory has written, so it also shows finished jobs from earlier runs.
+
+### What you see
+
+**Plans, at the top.** One card per plan made with `/factory plan`. This area only
+appears if the project has at least one plan. If you never use `/factory plan`,
+the page shows the job board alone.
+
+- The card shows the plan's title and its status:
+
+  | Status | Meaning |
+  |---|---|
+  | planning | The planner is writing or rewriting the plan. |
+  | needs-info | The planner has questions for you. |
+  | ready | The plan is written and waits for your approval. |
+  | approved | You approved it. For a new project, the skeleton is being set up. |
+  | filed | Its issues exist on GitHub. The card shows how many are merged, for example 3 of 8. |
+
+- A plan that waits for you (needs-info or ready) is highlighted.
+- Click the card to read your brief, the plan and your notes, and to see each
+  issue of the plan with where it stands.
+
+**Jobs, on the board.** One card per issue being built. The columns are the steps
+of the loop, from intake on the left to done on the right, and a card moves to the
+right as its job advances.
+
+- Each card shows the issue and pull request numbers, the risk level intake gave
+  it, the cost so far and the time spent.
+- Under that, one row per round shows the result of the checks and of each
+  reviewer. They fill in as results arrive, so you can see which reviewer is
+  still working and which one asked for changes.
+- A job that came from a plan shows the plan's name.
+- A job that waits for you is highlighted.
+
+**Details, on click.** Click a job card to read every file the job wrote: the
+issue, intake's decision, the spec, the build report, each round's checks and
+reviews, and the final decision. Each file opens with a short summary, so you can
+skim first and read the detail only where it matters.
+
+### How to use it day to day
+
+- **During a run:** keep it open next to Claude Code to see progress without
+  reading the chat.
+- **When something is highlighted:** click it to see what it needs. For a job,
+  the decision file says what you must decide; then approve, ask for changes or
+  drop the job as described under "Each action, both ways". For a plan, read the
+  questions or the plan, then answer or approve in Claude Code.
+- **To understand a result:** open the job and read the reviews and the decision.
+  This is the quickest way to see why a job needed several rounds or why it was
+  handed to you.
+- **To watch cost:** each card shows its own cost, which tells you which kinds of
+  issue are expensive.
+
+If the page says there is nothing to show, no job or plan exists yet in this
+project: run `/factory run` or `/factory plan` first.
 
 ## Commands
 
@@ -352,7 +444,8 @@ above, generate the factory in it, add your spec file if you have one, then run
 /factory plan <idea | spec file>
                       turn a new project or a big feature into an ordered queue of issues
 /factory <anything>   ask about a job, give feedback, answer a question, reject a job,
-                      or describe a new feature (it files the issue and runs it)
+                      approve or change a plan, or describe a new feature (it files
+                      the issue and runs it)
 ```
 
 ## Tuning cost and speed
