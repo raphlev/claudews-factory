@@ -63,10 +63,15 @@ plan.json itself.
         └─────────────┴──────┬──────┴─────────────┘         │
                              ▼                              │
                    ┌──────────────────┐   any CHANGES:      │
-                   │   WAIT FOR ALL   ├─────────────────────┘
-                   │  routed reviews  │   resume builder
-                   └─────────┬────────┘   (max 3 rounds)
-                             ▼ all PASS
+                   │   WAIT FOR ALL   ├─────────────────────┤
+                   │  routed reviews  │   resume builder    │
+                   └─────────┬────────┘   (max 3 rounds)    │
+                             ▼ all PASS                     │
+                   ┌──────────────────┐   CHANGES: same     │
+                   │   final review   ├─────────────────────┘
+                   │     by risk      │   way back
+                   └─────────┬────────┘
+                             ▼ PASS
                    ┌──────────────────┐
                    │     approver     │
                    │       opus       │
@@ -81,9 +86,11 @@ plan.json itself.
 
 Each box names its model. "by risk" means routed from intake's rating: the builder
 is sonnet for low risk and opus for medium and high; the code reviewer is haiku for
-low risk and sonnet otherwise. The third line of each reviewer box says when it
-runs: the code reviewer always, the others only when intake flags that surface. A
-round is one build → gate → review pass.
+low risk and sonnet otherwise; the final reviewer is sonnet for low risk and opus
+otherwise. The third line of each reviewer box says when it runs: the code reviewer
+always, the others only when intake flags that surface. The final review always
+runs, alone, once every routed review has passed. A round is one build → gate →
+review pass.
 
 ## Planning (new projects and big features)
 
@@ -114,8 +121,9 @@ idea or spec file → planner (opus) → plan.md → I approve or ask for change
   skeleton in the main checkout on the base branch, with a test runner and one
   passing test. It writes AGENTS.md
   (setup, dev server on a given port, validation commands) and fills `checks` in
-  config.json. The checks must pass before it commits. There is nothing to gate or
-  review against yet, so I review it myself. This is the one time the factory
+  config.json. Before it commits, the checks must pass and the final reviewer
+  must pass the skeleton against the plan. No specialist reviews a skeleton, so I
+  also look at it myself. This is the one time the factory
   works in the main checkout and commits on the base branch, and it pushes only
   after I say yes.
 - Issues are filed only once the bootstrap is on origin, because every job
@@ -132,6 +140,7 @@ idea or spec file → planner (opus) → plan.md → I approve or ask for change
   agents/                          # one file per agent in the loop
     planner.md  intake.md  spec-writer.md  builder.md  approver.md
     reviewer-code.md  reviewer-ux.md  reviewer-ui.md  reviewer-security.md
+    reviewer-final.md
 factory/
   config.json                      # every knob: concurrency, rounds, labels, checks, routing, prices
   bin/job.py                       # the only writer of job.json and plan.json; refuses illegal moves; merges
@@ -142,6 +151,7 @@ factory/
     brief.md                       # my idea or my spec file, verbatim
     plan.md                        # the planner's stack, structure and ordered issues
     note-1.md                      # my answers or requested changes
+    review-final.md                # the final reviewer's check of the skeleton (new projects)
     plan.json                      # the plan's state and filed issues, drives the dashboard
   jobs/003-rate-limiting/          # one folder per job (gitignored runtime state)
     job.json                       # the job's state, drives the dashboard
@@ -153,6 +163,7 @@ factory/
       checks.md                    # the gate's verdict (+ checks.log)
       review-code.md               # one file per routed reviewer
       review-ux.md
+      review-final.md              # the final review, once the others have passed
     decision.md
     feedback-1.md                  # my feedback after an escalation
 .worktrees/003-rate-limiting/      # the job's git worktree, on factory/003-rate-limiting (gitignored)
@@ -182,9 +193,9 @@ factory/config.json
   "checks": ["npm ci", "npm run lint", "npm test", "npm run build"],
   "models": { "planner": "opus", "bootstrap": "opus", "intake": "opus",
               "spec-writer": "opus", "approver": "opus" },
-  "routing": { "low":    { "builder": "sonnet", "code": "haiku" },
-               "medium": { "builder": "opus",   "code": "sonnet" },
-               "high":   { "builder": "opus",   "code": "sonnet" } },
+  "routing": { "low":    { "builder": "sonnet", "code": "haiku",  "final": "sonnet" },
+               "medium": { "builder": "opus",   "code": "sonnet", "final": "opus" },
+               "high":   { "builder": "opus",   "code": "sonnet", "final": "opus" } },
   "surface_reviewers": { "ui": { "ux": "sonnet", "ui": "haiku" },
                          "security": { "security": "opus" } },
   "protected_paths": ["factory/config.json", "factory/bin/*"],
@@ -202,11 +213,12 @@ factory/jobs/<job-id>/job.json
   "stage": "review", "round": 2, "round_limit": 3,
   "intake": { "decision": "ACCEPT", "rescoped": false, "risk": "medium",
               "surfaces": ["ui", "security"] },
-  "agents": { "builder": "opus",
+  "agents": { "builder": "opus", "final": "opus",
               "reviewers": { "code": "sonnet", "ux": "sonnet", "ui": "haiku",
                              "security": "opus" } },
   "gate": "PASS",
   "reviews": { "code": "PASS", "ux": "CHANGES", "ui": "pending", "security": "PASS" },
+  "final": null,
   "cost_usd": 1.42, "started": "2026-01-01T10:00:00Z", "ended": null }
 ```
 
@@ -220,8 +232,8 @@ factory/plans/<plan-id>/plan.json
 ```
 
 A plan's `status` is one of planning, needs-info, ready, approved, filed. A job's
-`stage` is one of intake, needs-info, spec, build, gate, review, approve, merging,
-needs-human, merged, rejected. The legal moves between them are one table at the top
+`stage` is one of intake, needs-info, spec, build, gate, review, final-review,
+approve, merging, needs-human, merged, rejected. The legal moves between them are one table at the top
 of job.py.
 
 Every step's file starts with a machine-readable header, then a blank line, then
@@ -301,10 +313,24 @@ the job's worktree.
     validation and escaping; XSS; data exposure in responses and logs; payments
     and identity; abuse of public endpoints; secrets in commits; new dependencies.
     Pre-existing issues the change did not make worse go under Notes.
+- final reviewer (reviewer-final). Runs alone, after every routed review has
+  passed, on the exact commit that would merge, and writes round-N/review-final.md
+  in the same format. It rereads the whole change from scratch instead of trusting
+  the earlier reviews, and looks for what specialists miss:
+  - pieces that contradict each other: spec, code, tests, docs and what build.md
+    claims;
+  - a fix from one round that broke something an earlier round had settled;
+  - anything half-done or left behind: debug output, dead code, TODOs, stale
+    comments, names or docs;
+  - a requirement or acceptance criterion that no reviewer owned. It checks every
+    criterion against the code itself, not against build.md.
+  CHANGES is only for real problems, each with the fix wanted; taste goes under
+  Notes. For a bootstrap it reviews the skeleton against plan.md instead, on the
+  `routing.high.final` model, and writes review-final.md in the plan folder.
 - approver. Reads everything in the job folder and the diff. APPROVE only when
   every acceptance criterion is met with convincing evidence (it spot-checks at
-  least one itself), the final round's gate and every review pass with no Note
-  describing a real problem, and the change stays inside intake's Scope. ESCALATE
+  least one itself), the final round's gate, reviews and final review pass with no
+  Note describing a real problem, and the change stays inside intake's Scope. ESCALATE
   when any of that fails, or when the change touches money, access or identity;
   deploy, CI or hosting config; a schema migration, email, production data or a
   new dependency; or rests on an Assumption that is really a product decision.
@@ -366,8 +392,8 @@ atomically.
   writes merge-checks.md instead. `--dry-run` writes nothing: the builder uses it
   on its worktree, and bootstrap uses it without a job, on the main checkout.
 - route.py: looks up intake's risk and surfaces in `routing` and
-  `surface_reviewers` and records the builder's model and the reviewer set in
-  job.json.
+  `surface_reviewers` and records the builder's model, the final reviewer's model
+  and the reviewer set in job.json.
 
 ## Rules
 
@@ -402,6 +428,10 @@ atomically.
   test that was weakened, skipped or special-cased to pass.
 - WAIT FOR ALL: spawn a round's reviewers in one message. The round is done only
   when every routed reviewer's file exists. Never resume the builder mid-round.
+- Final review: once every routed review passes, the final reviewer runs alone on
+  that same commit. PASS goes to the approver. CHANGES sends the job back to the
+  builder for a new round, exactly like any other review, so nothing merges
+  without one thorough last read of the whole change.
 - Spawn the builder with a name (builder-<job-id>) and resume that same builder
   with SendMessage for each new round, pointing it at the round folder.
 - After `max_rounds` rounds without a clean pass, the job goes to needs-human.
@@ -451,8 +481,8 @@ labeled issue first, then runs like any other.
 One self-contained HTML file, served from factory/ with
 `python -m http.server --bind 127.0.0.1`, so only this machine can open it.
 Jobs are cards moving across the loop's stages. Each card shows its issue and PR,
-its risk, cost and time, and one row per round of gate and reviewer chips that fill
-in as verdicts land. needs-human jobs stand out. Click a card to read its markdown
+its risk, cost and time, and one row per round of gate, reviewer and final-review
+chips that fill in as verdicts land. needs-human jobs stand out. Click a card to read its markdown
 files, with each file's Summary shown first. Clean and minimal.
 
 The plan strip appears only when at least one plan exists. Without plans the page
@@ -489,6 +519,11 @@ the transcripts cannot be read, show no cost and keep everything else working.
 - Verify: the checks, when there are any, pass on the base branch; `job.py queue`
   runs without error when the repo is on GitHub; config.json parses; the dashboard
   renders a made-up job and a made-up plan, which you then delete.
+- Before committing, review what you generated as a whole. Reread every file
+  against this prompt and against the others: stage names, file names, first-line
+  formats, config keys and script commands must match everywhere they appear, and
+  the skill must only call commands the scripts really have. Fix what you find,
+  then verify again.
 - Commit on the current branch and ask before pushing. Then tell me in a few lines
   how to run my first job or, in an empty repo, how to start with /factory plan.
   Suggest running /factory in a Sonnet session, and raising `concurrency` from 1

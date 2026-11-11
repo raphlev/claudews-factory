@@ -10,6 +10,23 @@ a spec, build it, test it with the project's own checks, review it, and open a P
 It merges what it is sure of and hands you the rest. It can also start a new
 project from a spec you wrote.
 
+What happens to each issue, in order:
+
+1. **Intake** decides whether it is worth building, at what size, and how risky
+   it is. It may ask you a question or decline.
+2. **Spec:** an agent writes exactly what to build and how to tell it works.
+3. **Build:** an agent writes the code on its own branch and opens a pull request.
+4. **Checks:** your project's own tests, lint and build must pass. If not, the
+   builder gets the errors and tries again.
+5. **Reviews:** a code reviewer always, plus UX, UI and security reviewers when
+   the change needs them. If any asks for changes, the builder fixes them and the
+   checks and reviews run again.
+6. **Final review:** once all reviewers are satisfied, one more agent rereads the
+   whole change from scratch, looking for contradictions, leftovers and anything
+   the specialists missed. It can send the job back to the builder too.
+7. **Approval:** an approver merges the pull request if it is sure, or hands it
+   to you with a specific question.
+
 The factory works with any language or framework. Python is only what the
 factory's own three small scripts are written in; your projects can use anything.
 
@@ -328,8 +345,8 @@ stack, what is out of scope), the fewer questions and surprises you get.
 2. **You approve.** You read the plan and approve it or ask for changes. Nothing
    is created on GitHub before you approve.
 3. **Skeleton, new projects only.** The factory scaffolds the project with a
-   working test setup, writes `AGENTS.md` and fills in the checks. Review this
-   yourself: it is the foundation everything else builds on, and the one time the
+   working test setup, writes `AGENTS.md` and fills in the checks. The final
+   reviewer checks it against the plan, but look at it yourself too: it is the foundation everything else builds on, and the one time the
    factory commits straight to the default branch. It pushes only after you say
    yes.
 4. **Issues.** Once the skeleton is pushed, the factory files the issues in
@@ -408,8 +425,8 @@ right as its job advances.
 
 - Each card shows the issue and pull request numbers, the risk level intake gave
   it, the cost so far and the time spent.
-- Under that, one row per round shows the result of the checks and of each
-  reviewer. They fill in as results arrive, so you can see which reviewer is
+- Under that, one row per round shows the result of the checks, of each reviewer
+  and of the final review. They fill in as results arrive, so you can see which reviewer is
   still working and which one asked for changes.
 - A job that came from a plan shows the plan's name.
 - A job that waits for you is highlighted.
@@ -458,8 +475,10 @@ regenerate to change it.
   queued issues touch different parts of the code.
 - **`models`, `routing`, `surface_reviewers`** set which model each agent runs on.
   The defaults already use cheaper models where the work allows: low-risk jobs get
-  a Sonnet builder and a Haiku code reviewer, and the UX, UI and security
-  reviewers only run when the change needs them.
+  a Sonnet builder, a Haiku code reviewer and a Sonnet final reviewer, and the
+  UX, UI and security reviewers only run when the change needs them. The final
+  review runs on every job; it is the price of not merging something
+  inconsistent.
 - **`max_rounds`** is how many build, check and review passes a job gets before it
   is handed to you.
 - **`checks`** is the list of commands that must pass before any reviewer runs:
