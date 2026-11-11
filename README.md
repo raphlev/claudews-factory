@@ -346,9 +346,9 @@ stack, what is out of scope), the fewer questions and surprises you get.
    is created on GitHub before you approve.
 3. **Skeleton, new projects only.** The factory scaffolds the project with a
    working test setup, writes `AGENTS.md` and fills in the checks. The final
-   reviewer checks it against the plan, but look at it yourself too: it is the foundation everything else builds on, and the one time the
-   factory commits straight to the default branch. It pushes only after you say
-   yes.
+   reviewer checks it against the plan, but look at it yourself too: it is the
+   foundation everything else builds on, and the one time the factory commits
+   straight to the default branch. It pushes only after you say yes.
 4. **Issues.** Once the skeleton is pushed, the factory files the issues in
    order. Run `/factory run` and they are built one after another, each waiting
    until the issues it depends on are closed.

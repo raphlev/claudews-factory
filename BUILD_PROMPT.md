@@ -233,8 +233,8 @@ factory/plans/<plan-id>/plan.json
 
 A plan's `status` is one of planning, needs-info, ready, approved, filed. A job's
 `stage` is one of intake, needs-info, spec, build, gate, review, final-review,
-approve, merging, needs-human, merged, rejected. The legal moves between them are one table at the top
-of job.py.
+approve, merging, needs-human, merged, rejected. The legal moves between them are
+one table at the top of job.py.
 
 Every step's file starts with a machine-readable header, then a blank line, then
 `## Summary` (3 to 5 bullets a human can skim on the dashboard), then the detail:
