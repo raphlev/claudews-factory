@@ -44,8 +44,8 @@ Follow these in order. Each step is a section below.
 **No project in mind yet?** Do not generate the factory just to have it. It is
 generated inside a project and tailored to it, so without a project there is
 nothing for it to build or check. Instead, create a small throwaway project
-purely to test the factory: the prompt has never been run, and it is better to
-find its problems on a toy than on a project you care about. Example 1 under
+purely to test the factory: it is better to find the factory's problems on a toy
+than on a project you care about. Example 1 under
 "Example plans, from simple to complex" is a good first one. It exercises the
 whole path: plan, skeleton, a few issues, pull requests and the dashboard. For an
 empty project like this, do steps 1 and 2, then go straight to step 4.
@@ -66,7 +66,8 @@ the generated project, so the next project gets it right.
 
 ## Before you start
 
-You need these on your Windows machine. Each command should succeed in PowerShell:
+You need these on your Windows machine. Run all four commands in PowerShell; they
+only check, they change nothing, and each should succeed:
 
 ```powershell
 git --version
@@ -119,8 +120,9 @@ Use a small test project the first time. The factory opens and merges real PRs.
 ## How it works on GitHub
 
 Most of the time you can stay in Claude Code: almost every action below can be
-done by typing to the factory. The github.com way is described next to it, because
-that is where you read the proposed code and where the history is kept.
+done by typing to the factory. The same actions can also be done on github.com or
+from PowerShell, and those ways are described too. They are alternatives: for any
+action you pick one way, never all of them.
 
 One rule explains most of the behaviour: **the factory only acts while you run a
 `/factory` command in Claude Code.** It does not watch GitHub. If you answer a
@@ -156,11 +158,12 @@ created once per project, and the generation step does that for you.
 You only ever add `factory` yourself. The factory adds and removes the other two.
 
 If the labels are missing in a project (for example because `gh` was not logged in
-during generation), create them once:
+during generation), create them once. Choose one way:
 
+- **In Claude Code:** not available as a `/factory` command.
 - **On github.com:** **Issues** tab, then **Labels**, then **New label**. Type the
   name exactly as in the table and save. Repeat for each of the three.
-- **From PowerShell:**
+- **From PowerShell:** run all three lines, one per label.
 
   ```powershell
   gh label create factory --description "Build this with the software factory"
@@ -181,31 +184,47 @@ For each issue it builds, you will see this on github.com:
    - The factory takes the PR out of draft, comments what it needs from you, and
      adds `factory:needs-human` to the issue.
 
-### Each action, both ways
+### Each action: choose one way
+
+Each action below can be done in up to three ways. **They are alternatives: pick
+one, never all of them.** Whichever you pick, the result on GitHub is the same.
+The ways are always listed in the same order:
+
+1. **In Claude Code**, by typing to the factory. Usually the easiest.
+2. **On github.com**, by clicking.
+3. **From PowerShell**, with the `gh` command.
+
+When a way does not exist for an action, it says "not available". Because the
+factory only acts when you run it, the github.com and PowerShell ways often end
+with "then run `/factory run` in Claude Code"; that last step belongs to that way.
 
 The examples use issue #12 and pull request #15.
 
 #### Ask for something to be built
 
+Choose one:
+
 - **In Claude Code:** describe it. The factory creates the issue, adds the
-  `factory` label and starts building.
+  `factory` label and starts building. Nothing else to do.
 
   ```text
   /factory Add a dark mode toggle to the settings page
   ```
 
-- **On github.com:**
+- **On github.com:** create the issue by hand, then start the factory.
   1. Open the repository and click the **Issues** tab.
   2. Click **New issue**.
   3. Write a title and a description.
   4. In the right-hand column, click **Labels** and tick `factory`.
   5. Click the green button to create the issue.
   6. In Claude Code, run `/factory run`.
-- **From PowerShell:**
+- **From PowerShell:** create the issue with one command, then start the factory.
 
   ```powershell
   gh issue create --title "Add a dark mode toggle" --body "On the settings page..." --label factory
   ```
+
+  Then, in Claude Code, run `/factory run`.
 
 Write the description like a request to a colleague: what should happen, where,
 and how you would tell it works. One issue should be one small change. For
@@ -213,30 +232,39 @@ something bigger, use `/factory plan` (see below).
 
 #### Have an existing issue built
 
-The issue needs the `factory` label first.
+This one has two steps: the issue needs the `factory` label first, then you start
+the factory.
 
+Step 1, add the label. Choose one:
+
+- **In Claude Code:** not available. The factory only builds issues that already
+  carry the label.
 - **On github.com:** open the issue, click **Labels** in the right-hand column,
   tick `factory`, and click outside the list to save.
 - **From PowerShell:** `gh issue edit 12 --add-label factory`
 
-Then, in Claude Code, run `/factory run 12` for that issue alone, or
-`/factory run` for everything in the queue.
+Step 2, start the factory. In Claude Code, run `/factory run 12` for that issue
+alone, or `/factory run` for everything in the queue.
 
 #### Follow progress
+
+Any of these, whenever you like. They show the same job from different places:
 
 - **In Claude Code:** the factory prints one line each time a job moves a step.
   You can also ask, for example `/factory how is issue 12 going?`, or open the
   dashboard (see "The dashboard").
 - **On github.com:** open the issue to read the factory's comments. The pull
   request is linked from the issue; open it to see the code so far.
+- **From PowerShell:** `gh issue view 12 --comments` prints the issue with the
+  factory's comments.
 
 #### Answer a question from the factory
 
 The issue carries `factory:needs-info`, and the question is in the factory's last
-comment on it.
+comment on it. Choose one:
 
 - **In Claude Code:** give the answer and say which issue. The factory posts your
-  words on the issue and carries on.
+  words on the issue and carries on. Nothing else to do.
 
   ```text
   /factory for issue 12: use the existing blue, not a new colour
@@ -244,12 +272,22 @@ comment on it.
 
 - **On github.com:** open the issue, type your answer in the comment box at the
   bottom, and click **Comment**. Then run `/factory run` in Claude Code.
+- **From PowerShell:** post the answer with one command.
+
+  ```powershell
+  gh issue comment 12 --body "Use the existing blue, not a new colour"
+  ```
+
+  Then run `/factory run` in Claude Code.
 
 #### Approve a pull request that waits for you
 
 The issue carries `factory:needs-human`. Approving always means merging the pull
-request; there is no separate approve command.
+request; there is no separate approve command. Choose one:
 
+- **In Claude Code:** not available for the merge itself. You can ask why the job
+  stopped, for example `/factory why did issue 12 need me?`, then merge with one
+  of the two ways below.
 - **On github.com:**
   1. Click the **Pull requests** tab and open the pull request.
   2. On the **Conversation** tab, read the factory's comment: it says what it
@@ -257,24 +295,23 @@ request; there is no separate approve command.
   3. Click the **Files changed** tab to read the code changes.
   4. Back on **Conversation**, click **Merge pull request**, then **Confirm
      merge**.
-
-  The issue closes by itself. The next `/factory run` records the job as merged.
-- **From PowerShell:**
+- **From PowerShell:** the first line reads the changes, the second approves.
 
   ```powershell
-  gh pr view 15 --web      # open it in the browser
-  gh pr diff 15            # or read the changes in the terminal
+  gh pr diff 15
   gh pr merge 15 --merge
   ```
 
-- **In Claude Code:** you can ask why it stopped, for example
-  `/factory why did issue 12 need me?`. The merge itself is one of the two ways
-  above.
+With either way, the issue closes by itself, and the next `/factory run` records
+the job as merged.
 
 You may merge a pull request by hand at any moment, not only when asked. If it is
-still marked **Draft**, click **Ready for review** first.
+still marked **Draft**, take it out of draft first: click **Ready for review** on
+github.com, or run `gh pr ready 15` in PowerShell.
 
 #### Ask for changes instead of approving
+
+Only one way exists:
 
 - **In Claude Code:** say what to change and for which issue. Your words go to the
   builder, the job runs another round, and the same pull request is updated.
@@ -283,14 +320,17 @@ still marked **Draft**, click **Ready for review** first.
   /factory on issue 12: keep the old button and add the new one next to it
   ```
 
-- **On github.com:** not possible. The factory does not read comments you leave on
-  a pull request, so use Claude Code for this.
+- **On github.com:** not available. The factory does not read comments you leave
+  on a pull request.
+- **From PowerShell:** not available, for the same reason.
 
 #### Drop a job
 
+Choose one. The Claude Code way is the tidy one:
+
 - **In Claude Code:** for a job that is waiting for you or for an answer, say so
-  with a reason. The factory posts the reason on the issue, removes its labels
-  and closes the pull request.
+  with a reason. The factory posts the reason on the issue, removes its labels,
+  closes the pull request and cleans up its working files.
 
   ```text
   /factory reject issue 12: not needed any more
@@ -298,15 +338,24 @@ still marked **Draft**, click **Ready for review** first.
 
 - **On github.com:** open the issue and untick `factory` under **Labels**, or
   close the issue. If it has a pull request, open it and click **Close pull
-  request**. The factory will not pick the issue up again. This way leaves the
-  job's working files on your machine, so the Claude Code way is tidier.
+  request**. The factory will not pick the issue up again, but the job's working
+  files stay on your machine.
+- **From PowerShell:** the same as the github.com way, with the same limit. The
+  second line is only needed if the issue has a pull request.
+
+  ```powershell
+  gh issue edit 12 --remove-label factory
+  gh pr close 15
+  ```
 
 #### See what waits for you
+
+Choose one:
 
 - **In Claude Code:** `/factory what needs me?`
 - **On github.com:** on the **Issues** tab, open the **Labels** filter and choose
   `factory:needs-human` or `factory:needs-info`.
-- **From PowerShell:**
+- **From PowerShell:** one line per list; run either or both.
 
   ```powershell
   gh issue list --label "factory:needs-human"
@@ -337,7 +386,8 @@ still marked **Draft**, click **Ready for review** first.
 ## Start a new project, or a big feature
 
 The factory builds one small pull request per issue. For anything bigger, let it
-plan first. Give it a spec file you wrote, or just a sentence:
+plan first. Give it a spec file you wrote, or just a sentence. These are two forms
+of the same command; use one, not both:
 
 ```text
 /factory plan docs/spec.md
@@ -365,7 +415,8 @@ stack, what is out of scope), the fewer questions and surprises you get.
 Planning is a conversation in Claude Code; nothing about a plan happens on
 github.com until its issues are filed. After `/factory plan`, the factory shows
 you the plan or its questions, and you reply in the chat. If you come back later
-in a new session, say which plan you mean:
+in a new session, say which plan you mean. The three lines below are separate
+examples (answering a question, asking for a change, approving), not a sequence:
 
 ```text
 /factory for the reading-list plan: use SQLite, and one user only
@@ -500,7 +551,7 @@ anything. You control the factory with `/factory` commands in Claude Code.
    python -m http.server --bind 127.0.0.1
    ```
 
-3. Open <http://localhost:8000/dashboard.html> in your browser.
+3. Open <http://127.0.0.1:8000/dashboard.html> in your browser.
 4. Leave the PowerShell window open while you use the page. Press `Ctrl+C` in it
    to stop the server when you are done.
 
@@ -510,7 +561,7 @@ Notes:
   devices on your network could open it and read the job files.
 - If port 8000 is already used by something else, pick another one, for example
   `python -m http.server 8010 --bind 127.0.0.1`, and open
-  <http://localhost:8010/dashboard.html>.
+  <http://127.0.0.1:8010/dashboard.html>.
 - The page refreshes itself every two seconds. You never need to reload it.
 - You can open it at any time, before, during or after a run. It reads the files
   the factory has written, so it also shows finished jobs from earlier runs.
@@ -542,8 +593,8 @@ right as its job advances.
 - Each card shows the issue and pull request numbers, the risk level intake gave
   it, the cost so far and the time spent.
 - Under that, one row per round shows the result of the checks, of each reviewer
-  and of the final review. They fill in as results arrive, so you can see which reviewer is
-  still working and which one asked for changes.
+  and of the final review. They fill in as results arrive, so you can see which
+  reviewer is still working and which one asked for changes.
 - A job that came from a plan shows the plan's name.
 - A job that waits for you is highlighted.
 
@@ -558,8 +609,8 @@ skim first and read the detail only where it matters.
   reading the chat.
 - **When something is highlighted:** click it to see what it needs. For a job,
   the decision file says what you must decide; then approve, ask for changes or
-  drop the job as described under "Each action, both ways". For a plan, read the
-  questions or the plan, then answer or approve in Claude Code.
+  drop the job as described under "Each action: choose one way". For a plan, read
+  the questions or the plan, then answer or approve in Claude Code.
 - **To understand a result:** open the job and read the reviews and the decision.
   This is the quickest way to see why a job needed several rounds or why it was
   handed to you.
