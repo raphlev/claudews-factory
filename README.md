@@ -146,30 +146,21 @@ project folder, `gh repo view --web` opens it in the browser.
 
 ### The labels
 
-It is always the same three labels. They belong to a repository, so they are
-created once per project, and the generation step does that for you.
+There are three labels, always the same. **The only thing you ever do with labels
+is put `factory` on an issue you want built.** Everything else is automatic.
 
-| Label | Who adds it | What it means |
+| Label | Who puts it on an issue | What it means |
 |---|---|---|
-| `factory` | you | "Build this." |
-| `factory:needs-info` | the factory | It asked a question in a comment on the issue and waits for your answer. |
-| `factory:needs-human` | the factory | The PR is ready but it wants your decision before merging. |
+| `factory` | You. | "Build this." |
+| `factory:needs-info` | The factory, automatically. | It asked you a question in a comment on the issue and waits for your answer. It removes the label once you have answered. |
+| `factory:needs-human` | The factory, automatically. | The PR is ready but it wants your decision before merging. It removes the label once you merge or ask for changes. |
 
-You only ever add `factory` yourself. The factory adds and removes the other two.
+Even `factory` is put on for you when you ask through Claude Code: with
+`/factory Add a dark mode toggle`, the factory creates the issue and labels it.
+You only add it by hand when you create an issue on github.com or from
+PowerShell.
 
-If the labels are missing in a project (for example because `gh` was not logged in
-during generation), create them once. Choose one way:
-
-- **In Claude Code:** not available as a `/factory` command.
-- **On github.com:** **Issues** tab, then **Labels**, then **New label**. Type the
-  name exactly as in the table and save. Repeat for each of the three.
-- **From PowerShell:** run all three lines, one per label.
-
-  ```powershell
-  gh label create factory --description "Build this with the software factory"
-  gh label create "factory:needs-info" --description "The factory asked a question"
-  gh label create "factory:needs-human" --description "The factory needs a human decision"
-  ```
+Setting the labels up in a project is automatic too. You never create a label.
 
 ### What the factory does on GitHub
 

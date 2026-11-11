@@ -368,6 +368,10 @@ atomically.
     refuses the merge.
   - `queue` moves a job to merged when its PR was merged by hand at any stage,
     and skips an issue that was closed or lost the `factory` label.
+  - Before job.py reads or sets a label, it creates any of the three that is
+    missing in the repo, so I never create one by hand. It puts
+    `factory:needs-info` or `factory:needs-human` on the issue when the job
+    starts waiting, and removes it when the job moves on.
   - `reject` saves the reason as rejection.md, posts it on the issue, removes the
     factory labels and closes the job's PR.
   - A job that reaches merged or rejected has its worktree and local branch
