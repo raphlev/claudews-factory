@@ -7,6 +7,11 @@ folder holding two files:
 - `BUILD_PROMPT.md`, a self-contained prompt given to Claude Code inside a
   target project, which generates the factory there.
 
+`SkillsFactory/` also has `EXAMPLES.md`: exercises to try the factory. An
+experiment that goes beyond the factory lives there, as additions typed with
+the build sentence, until a run has shown what is worth moving into
+`BUILD_PROMPT.md`.
+
 | Folder | What its prompt builds |
 |---|---|
 | `SoftwareFactory/` | a factory that turns GitHub issues into pull requests |
@@ -27,6 +32,9 @@ folder holding two files:
   older version gets an upgrade offer; it does not block.
 - **GitHub is optional.** The prompt asks whether to use it. Without GitHub the
   workflow is simpler: git on the machine only, no account, no `gh`, no push.
+- **Language is the user's choice.** English and French at least. The prompt
+  asks in which language the generated content is written; Claude talks to the
+  user in the language they write in. The prompts themselves stay in English.
 - **Claude's own practices for skills, tools and agents.** A skill is a folder
   with a short `SKILL.md`, detail in linked reference files one level deep, and
   its scripts beside it. Agents are optional. Check the current Claude Code

@@ -57,6 +57,7 @@ only the generated project, so the next project gets it right.
 |---|---|
 | `BUILD_PROMPT.md` | The prompt that builds the skills workspace. It is self-contained. Edit it to change the factory. |
 | `README.md` | This file. |
+| `EXAMPLES.md` | Six exercises to try the factory, from a first test with a few documents to an experiment that turns a video into illustrated skills. |
 
 ## Words you will meet
 
@@ -254,6 +255,11 @@ each document, and a date or version on each when rules change over time.
 Then follow the conversation. Claude asks permission before it runs a command
 or installs something: read the line, then accept.
 
+You can write to Claude in English, in French or in another language: it
+replies in the language you write in. `BUILD_PROMPT.md` stays in English, since
+only Claude reads it. The language of the skills is a separate choice, which
+Claude asks you to make.
+
 What it asks you:
 
 - how familiar you are with VS Code, git and GitHub, so that it explains as
@@ -262,7 +268,9 @@ What it asks you:
 - which domain, and a short name for it;
 - who will ask questions, and what they want back: explanations, step-by-step
   procedures, figures, a check of a case against the rules, drafted documents;
-- the languages of the documents and of the answers;
+- the language the skills are written in: English, French or another. It can
+  differ from the language of your documents and from the language you talk to
+  Claude in. By default, answers come in the language of each question;
 - which names must never be written and, with GitHub, whether the converted
   text may be committed;
 - later, with the documents converted: which source wins when two disagree,
@@ -365,6 +373,9 @@ You can force the choice in `kb/config.json` (`index.mode`: `auto`, `on`, `off`)
 | Public-service procedure | the regulation, forms and guides (PDF), the agency's web pages saved as HTML | eligibility, the application file, deadlines and appeals |
 | Technical documentation | a product manual (PDF), an online manual saved as a set of HTML pages | installation, configuration, troubleshooting |
 
+[EXAMPLES.md](EXAMPLES.md) gives six exercises to try the factory, each with
+what to put in `input`, what to type and what a good result looks like.
+
 ## Commands
 
 ```text
@@ -381,6 +392,8 @@ Everything is in `kb/config.json` in the project, so you never need to
 regenerate to change it.
 
 - **`guidance`** is `guided` (every step explained) or `concise`.
+- **`languages`** holds the language of the skills and the language of the
+  answers.
 - **`authority`** is the order in which sources win when they disagree.
 - **`notice`** is the sentence that ends answers stating a rule. Empty for none.
 - **`index.mode`** is `auto`, `on` or `off` for the search database.

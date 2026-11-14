@@ -27,6 +27,7 @@ needed in your project.
 |---|---|
 | `README.md` | For you: what the factory does, how to set up, how to use the result. |
 | `BUILD_PROMPT.md` | For Claude Code: the prompt that builds the factory. Edit it to change the factory. |
+| `EXAMPLES.md` | SkillsFactory only: exercises to try the factory. |
 
 If a generated project shows a defect of the factory, fix the `BUILD_PROMPT.md`
 here rather than only the generated project, so that the next project gets it

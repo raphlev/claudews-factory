@@ -13,10 +13,12 @@ about my domain. Do not assume how experienced I am with the tools: step 1 asks,
 and you explain as much or as little as I chose. The workspace may be shared
 between experienced and inexperienced people, so everything you write for its
 users (README.md, the messages of the scripts, the replies of `/kb`) must be
-plain enough for a newcomer and short enough for an expert. I build and run
-this on Windows, so everything must work there. When a step cannot be
-completed, stop, tell me what is missing, and leave the workspace so that a
-later session can resume (see Resume).
+plain enough for a newcomer and short enough for an expert. Talk to me in the
+language I write in: this prompt is in English, and where it gives you words to
+say to me, you say them in my language. I build and run this on Windows, so
+everything must work there. When a step cannot be completed, stop, tell me
+what is missing, and leave the workspace so that a later session can resume
+(see Resume).
 
 ## The pipeline (edit this to change the factory)
 
@@ -195,16 +197,22 @@ the documents cannot tell you:
 2. **Who will ask, and what they want back:** an explanation, a step-by-step
    procedure, a figure or a definition, a check of a case against the rules, a
    drafted document. Several can apply.
-3. **The languages** of the documents and of the answers. Default for answers:
-   the language of the question.
+3. **The languages.** First, the language the skills are written in: English,
+   French or another. Propose the documents' main language, because the terms
+   then match the sources, but the choice is mine and it may differ from the
+   documents and from the language I talk to you in. Then confirm the languages
+   of the documents, and of the answers (default: the language of the
+   question).
 4. **Confidentiality.** Which names must never be written anywhere (customers,
    people)? With GitHub, also: may the converted text of my documents be
    committed to the private repo? Yes: a clone works at once. No: the pages
    stay on this machine like `input/`, and only the packs are committed.
 
-Save the answers in `kb/config.json`. With GitHub, whatever I answer to 4, tell
-me plainly that the packs summarise my documents, so the repo carries their
-content either way.
+Save the answers in `kb/config.json`. The skills' language is also the language
+of everything else written for the workspace's users: README.md, the glossary,
+the messages of the scripts and the replies of `/kb`. With GitHub, whatever I
+answer to 4, tell me plainly that the packs summarise my documents, so the repo
+carries their content either way.
 
 ## 3. The input folder
 
@@ -216,7 +224,7 @@ read it and never write, rename or delete in it, with one exception, the
   names are kept in the library, so they are a good place to group documents by
   kind or by authority, for example `input/policies/`, `input/procedures/`,
   `input/training/`.
-- Before converting, tell me this once, in these words. With GitHub: "The files
+- Before converting, tell me this once, in my language. With GitHub: "The files
   in `input/` are never committed, so GitHub is not a backup of them: keep the
   originals somewhere safe. What is committed is the Markdown text made from
   them" (or "only the packs written from them", if I answered no to question
@@ -370,8 +378,9 @@ enforces the ones a script can check.
 - **Only what Claude cannot know:** the domain's rules, figures, steps and
   exceptions. No general explanations, no restating of a page that a link
   reaches.
-- **One word per thing,** the documents' word, used the same way everywhere.
-  The glossary maps the askers' words to it.
+- **One word per thing,** used the same way everywhere: the documents' word, or
+  its one chosen translation when the skills are in another language. The
+  glossary maps the askers' words to it.
 - **Dates, not "currently".** A rule carries the date or version it is valid
   for, never "new", "recently" or "at present".
 - **Paths** are relative and use forward slashes, on Windows too.
@@ -443,7 +452,7 @@ kb/config.json
 ```
 { "domain": "Finance controlling", "prefix": "finctl",
   "guidance": "guided", "github": true,
-  "languages": { "documents": ["fr"], "answers": "question" },
+  "languages": { "documents": ["fr"], "skills": "fr", "answers": "question" },
   "question_types": ["explain", "procedure", "figure", "check-case", "draft"],
   "authority": ["input/policies", "input/procedures", "input/training"],
   "commit_pages": true, "keep_out": ["<a name never to write>"],
@@ -609,8 +618,11 @@ its own files, and replies with one line. Both read `kb/config.json`,
     in what order, who decides, by when, how much, and what goes wrong.
   - Where sources disagree it applies the `authority` order and says so. Where
     wording matters it quotes.
-  - The description carries the triggers in every language askers use. The body
-    is in the documents' main language, so that terms match.
+  - The body is in the skills' language (`languages.skills`). When that is not
+    the documents' language, quotes stay in the original, and each key term is
+    followed the first time by the documents' own term in brackets, so that it
+    can still be found in the library. The description carries the triggers in
+    every language askers use.
   - On a later round it reads the findings of check.py and fixes those.
   - Reply: `BUILT <pack>: <n> lines, <n> citations`, or `BLOCKED: <reason>`.
 - **pack-verifier** (Read, Grep, Glob, Bash, Edit, Write).
@@ -692,7 +704,8 @@ a user-level memory folder.
 ## Finish
 
 - Write `README.md` for everyone who will use the workspace, experienced or
-  not: plain words, short sections, commands ready to copy. It says how to ask
+  not, in the skills' language: plain words, short sections, commands ready to
+  copy. It says how to ask
   a question and what a good one contains (the tips list: name the subject and
   the situation, give the date when rules change over time, use the documents'
   words when I know them, say what I want back, name the document if I know it,
