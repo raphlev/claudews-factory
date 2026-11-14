@@ -23,6 +23,24 @@ Follow BUILD_PROMPT.md and build the skills workspace in this folder.
 | 5 | Documents in one language, skills in another | the language question |
 | 6 | A video with chapters and subtitles (experimental) | a new kind of input, images in skills |
 
+## Suggested order
+
+1. **Exercise 1 first.** It is the first real run of the prompt. Use an empty
+   folder outside this repository, and documents you know well, so that you can
+   judge the answers.
+2. **Then one real recording with the audio-transcribe skill**
+   ([Skills/convert-audio-subtitle](../Skills/convert-audio-subtitle/README.md)):
+   a meeting of 10 to 15 minutes, with the default model. It checks what was
+   not tested when the skill was hardened: the real model's memory and speed,
+   real speech, and Claude's correction step. The first run downloads about
+   1.9 GB.
+3. **Then exercise 6.** It combines both, and is the most experimental.
+4. **Exercises 2 to 5,** in any order, for the cases that matter to you.
+
+After each run, fold back only what proved useful: fix `BUILD_PROMPT.md` or the
+skill, and move what worked in an exercise's additions into the factory, such
+as video as a new kind of input once exercise 6 has worked.
+
 ## 1. A handful of documents
 
 The first test. Start here.
