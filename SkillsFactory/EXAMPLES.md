@@ -109,6 +109,11 @@ folded into the factory afterwards.
 
 - **The video** has chapters, and its subtitles are a text file (`.srt`).
   Subtitles stored as images inside the video cannot be read.
+- **No subtitles, or subtitles in the wrong language?** Make the `.srt` first
+  with the ready-made
+  [audio-transcribe skill](../Skills/convert-audio-subtitle/README.md): it
+  turns the speech of the video into subtitles, re-times them to the speech,
+  and can translate them.
 - **ffmpeg** is installed: `ffmpeg -version` prints a version. If not:
   `winget install --id Gyan.FFmpeg -e`, then open a new PowerShell.
 - **Rights:** the subtitles and the images belong to the author of the video.
@@ -195,5 +200,7 @@ file that holds the GIF.
 - **What Claude sees.** Claude reads the subtitles and looks at still frames.
   It does not watch the movement, so a detail that the trainer does not say and
   that no still frame shows is not in the description.
-- **No subtitles.** A video without subtitles would need its speech turned into
-  text first. That is a heavier step, not covered here.
+- **Subtitles made from the speech.** When the `.srt` comes from the
+  audio-transcribe skill rather than from the video's author, a word may have
+  been misheard. Check the names and the technical terms in the subtitle file
+  before you build the skills from it.

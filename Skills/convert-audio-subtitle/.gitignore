@@ -1,0 +1,19 @@
+# Python environments (recreated by the skill, see SKILL.md step 0)
+.venv/
+__pycache__/
+
+# Whisper models (1.6 GB+, downloaded on first use into the skill's models/)
+.claude/skills/audio-transcribe/models/
+
+# Recordings and media (too big for git)
+*.mp4
+*.mkv
+*.mp3
+*.wav
+*.m4a
+
+# Transcription jobs written next to recordings
+*_transcript/
+
+# Local input media and subtitles
+input/

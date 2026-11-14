@@ -1,7 +1,9 @@
 # Notes for Claude
 
-This repo is a collection of prompts that build factories. Each factory is a
-folder holding two files:
+This repo holds two kinds of things: prompts that build factories, at the top
+level, and ready-made skills, under `Skills/`.
+
+Each factory is a folder holding two files:
 
 - `README.md`, for the person who will use the factory;
 - `BUILD_PROMPT.md`, a self-contained prompt given to Claude Code inside a
@@ -41,6 +43,29 @@ the build sentence, until a run has shown what is worth moving into
   documentation for frontmatter fields and limits instead of relying on memory.
 - **Wording in SkillsFactory:** web input is "a set of HTML pages", not "help
   center".
+
+## Ready-made skills
+
+`Skills/<project>/` is a finished skill, used as it is or copied into another
+project. It is not a factory and has no `BUILD_PROMPT.md`.
+
+| Folder | Skill | What it does |
+|---|---|---|
+| `Skills/convert-audio-subtitle/` | `audio-transcribe` | speech of an audio or video file to corrected text and subtitles |
+
+- Each project keeps its own `.claude/skills/<name>/` folder and a `README.md`.
+  Do not move a skill to this repo's root `.claude/`: it would then be offered
+  in every session here.
+- The same skill practices apply as for generated skills: a short `SKILL.md`,
+  scripts in the skill's `scripts/` folder, heavy files (environments, models,
+  media) kept out of git and recreated on first use.
+- Say exactly what leaves the machine. Anything Claude reads is sent to the
+  model, so "runs locally" may only be said of the steps that really do.
+- A skill may need an older version of a tool than the factories recommend.
+  Its README then says which, with the date it was checked, and how to install
+  it beside the latest. `audio-transcribe` needs Python 3.14 or older: on
+  2026-11-14, `onnxruntime` had no Windows wheel for Python 3.15.
+- After changing a script, test it, and say which parts could not be run.
 
 ## Working rules
 
